@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  image      String?
+  status     Boolean  @default(false)
+  updated_at DateTime @updatedAt
+  created_at DateTime @default(now())
+
+  category     Category[]
+  transactions Transactions[]
+  accounts     Accounts[]
+  goals        Goals[]
+  limits       Limits[]
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  icon        String
+  color       String?
+  type        Int
+  description String?
+  id_user     String
+  id_category String?
+  status      Boolean  @default(false)
+  updated_at  DateTime @updatedAt
+  created_at  DateTime @default(now())
+
+  user          User           @relation(fields: [id_user], references: [id], onDelete: NoAction)
+  parent        Category?      @relation("CategoryToCategory", fields: [id_category], references: [id])
+  subCategories Category[]     @relation("CategoryToCategory")
+  transactions  Transactions[]
+  goals         Goals[]
+  limits        Limits[]
+
+  @@unique([id_user, name])
+}
+
+model Transactions {
+  id          String   @id @default(cuid())
+  value       Int
+  type        Int
+  status      Int
+  description String?
+  image       String?
+  date        DateTime
+  id_account  String
+  id_category String
+  id_user     String
+  updated_at  DateTime @updatedAt
+  created_at  DateTime @default(now())
+
+  account  Accounts @relation(fields: [id_account], references: [id], onDelete: Restrict)
+  category Category @relation(fields: [id_category], references: [id], onDelete: Restrict)
+  user     User     @relation(fields: [id_user], references: [id], onDelete: Restrict)
+}
+
+model Accounts {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  icon        String
+  type        Int
+  description String?
+  status      Boolean
+  id_user     String
+  updated_at  DateTime @updatedAt
+  created_at  DateTime @default(now())
+
+  transactions Transactions[]
+  user         User           @relation(fields: [id_user], references: [id], onDelete: Restrict)
+
+  @@unique([id_user, name])
+}
+
+model Goals {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  icon        String
+  description String?
+  value       Float
+  color       String?
+  status      Boolean
+  deadline    DateTime
+  id_user     String
+  id_category String
+  updated_at  DateTime @updatedAt
+  created_at  DateTime @default(now())
+
+  user     User     @relation(fields: [id_user], references: [id], onDelete: Restrict)
+  category Category @relation(fields: [id_category], references: [id], onDelete: Restrict)
+
+  @@unique([id_user, name])
+}
+
+model Limits {
+  id          String   @id @default(cuid())
+  value       Float
+  status      Boolean
+  notice      String?
+  id_user     String
+  id_category String
+  updated_at  DateTime @updatedAt
+  created_at  DateTime @default(now())
+
+  user     User     @relation(fields: [id_user], references: [id], onDelete: Restrict)
+  category Category @relation(fields: [id_category], references: [id], onDelete: Restrict)
+}
