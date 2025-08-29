@@ -11,8 +11,31 @@ router.get("/", async (req, res) => {
 });
 
 router.get("/:id", async (req, res) => {
-  const result = await prisma.accounts.findFirst({ where: id });
-  res.status(200).json(result);
+  const id = req.params.id;
+
+  const result = await prisma.accounts.findFirst({
+    where: { id },
+    include: { transactions: true },
+  });
+
+  let receitas = 0;
+  let despesas = 0;
+
+  result.transactions.map((elem) => {
+    if (elem.type === 0) {
+      receitas += elem.value;
+    }
+
+    if (elem.type === 1) {
+      despesas += elem.value;
+    }
+  });
+
+  const saldo = (receitas - despesas) | 0;
+
+  const data = { ...result, receitas, despesas, saldo };
+
+  res.status(200).json(data);
 });
 
 router.post("/", async (req, res) => {
@@ -22,6 +45,16 @@ router.post("/", async (req, res) => {
     data: { name, slug, icon, type, description, status, id_user },
   });
 
+  res.status(200).json(result);
+});
+
+router.delete("/:id", async (req, res) => {
+  const id = req.params.id;
+  if (!id) {
+    return res.status(400).json("Id não informado!");
+  }
+
+  const result = await prisma.accounts.delete({ where: { id } });
   res.status(200).json(result);
 });
 

@@ -1,3 +1,4 @@
+const bcrypt = require("bcrypt");
 const express = require("express");
 const router = express.Router();
 const auth_middleware = require("../middleware/auth");
@@ -13,11 +14,12 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   const id = req.params.id;
 
-  const result = await prisma.user.findFirst({ where: { id } });
+  const result = await prisma.user.findUnique({ where: { id } });
   res.status(200).json(result);
 });
 
 router.post("/", async (req, res) => {
+  const hashed_password = await bcrypt.hash(password);
   const { name, email, password } = req.body;
 
   const result = await prisma.user.create({

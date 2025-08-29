@@ -98,7 +98,7 @@ model Goals {
   slug        String   @unique
   icon        String
   description String?
-  value       Float
+  value       Int
   color       String?
   status      Boolean
   deadline    DateTime
@@ -115,7 +115,7 @@ model Goals {
 
 model Limits {
   id          String   @id @default(cuid())
-  value       Float
+  value       Int
   status      Boolean
   notice      String?
   id_user     String

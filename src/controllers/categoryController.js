@@ -15,9 +15,16 @@ router.get("/:id", async (req, res) => {
 
   const result = await prisma.category.findFirst({
     where: { id },
-    include: { user: true },
+    include: { user: true, transactions: true },
   });
-  res.status(200).json(result);
+
+  let saldo = 0;
+
+  result.transactions.map((elem) => (saldo += elem.value));
+
+  const data = { ...result, saldo };
+
+  res.status(200).json(data);
 });
 
 router.post("/", async (req, res) => {
