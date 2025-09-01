@@ -12,25 +12,78 @@ router.get("/", async (req, res) => {
 });
 
 router.get("/:id", async (req, res) => {
-  const id = req.params.id;
-
-  const result = await prisma.user.findUnique({ where: { id } });
-  res.status(200).json(result);
+  try {
+    // Recebe o id na requisição
+    const { id } = req.params;
+    // Busca o usuário unico pelo id no banco
+    const result = await prisma.user.findUnique({ where: { id } });
+    // caso esse usuário não exista, retorna que o mesmo não foi encontrado
+    if (!result) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+    // Por segurança, deletamos a senha na hora de buscar os dados.
+    delete result.password;
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao buscar usuário" });
+  }
 });
 
 router.post("/", async (req, res) => {
-  const hashed_password = await bcrypt.hash(password);
-  const { name, email, password } = req.body;
+  try {
+    // constante que recebe do corpo da requisição os dados solicitados
+    const { name, email, password } = req.body;
+    // condicional que verifica se os campos estão preenchidos
+    if (!name || !email || !password) {
+      return res.status(400).json("Dados incompletos!");
+    }
+    // verifica se já existe o usuário, com base no e-mail
+    const existing_user = await prisma.user.findUnique({ where: { email } });
+    // se já existe, retorna "email já cadastrado"
+    if (existing_user) {
+      return res.status(400).json({ error: "Email já cadastrado!" });
+    }
 
-  const result = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password,
-    },
-  });
+    const salt = await bcrypt.genSalt(12);
+    const hashed_password = await bcrypt.hash(password, salt);
 
-  res.status(201).json(result);
+    const result = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashed_password,
+      },
+    });
+
+    // Remove a senha da resposta
+    delete result.password;
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao criar usuário" });
+  }
+});
+
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, password } = req.body;
+
+    const update_data = {};
+    const salt = await bcrypt.genSalt(12);
+
+    if (name) update_data.name = name;
+    if (email) update_data.email = email;
+    if (password) update_data.password = await bcrypt.hash(password, salt);
+
+    const result = await prisma.user.update({
+      where: { id },
+      data: update_data,
+    });
+    delete result.password;
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao atualizar usuário" });
+  }
 });
 
 router.delete("/:id", async (req, res) => {
