@@ -7,8 +7,13 @@ const prisma = require("../database");
 router.use(auth_middleware);
 
 router.get("/", async (req, res) => {
-  const result = await prisma.user.findMany();
-  res.status(200).json(result);
+  try {
+    const result = await prisma.usesr.findMany();
+    res.status(200).json(result);
+  } catch (error) {
+    console.log("Error => ", error);
+    res.status(403).json({ error });
+  }
 });
 
 router.get("/:id", async (req, res) => {
@@ -19,7 +24,7 @@ router.get("/:id", async (req, res) => {
     const result = await prisma.user.findUnique({ where: { id } });
     // caso esse usuário não exista, retorna que o mesmo não foi encontrado
     if (!result) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
+      return res.status(404).json({ error: "Usuário não encontrado" + error });
     }
     // Por segurança, deletamos a senha na hora de buscar os dados.
     delete result.password;
@@ -82,7 +87,7 @@ router.put("/:id", async (req, res) => {
     delete result.password;
     res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ error: "Erro ao atualizar usuário" });
+    res.status(500).json({ error: "Erro ao atualizar usuário:" + error });
   }
 });
 

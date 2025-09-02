@@ -6,13 +6,29 @@ const prisma = require("../database");
 router.use(auth_middleware);
 
 router.get("/", async (req, res) => {
-  const result = await prisma.transactions.findMany();
-  res.status(200).json(result);
+  try {
+    const result = await prisma.transactions.findMany();
+    res.status(200).json(result);
+  } catch (error) {
+    console.log("Error => ", error);
+    res.status(403).json({ error });
+  }
 });
 
 router.get("/:id", async (req, res) => {
-  const result = await prisma.transactions.findFirst({ where: id });
-  res.status(200).json(result);
+  try {
+    const { id } = req.params;
+
+    const result = await prisma.transactions.findUnique({ where: { id: id } });
+
+    if (!result) {
+      return res.status(404).json({ error: "Transação não encontrada" });
+    }
+    res.status(200).json(result);
+  } catch (error) {
+    console.log("Error => ", error);
+    res.status(403).json({ error });
+  }
 });
 
 router.post("/", async (req, res) => {

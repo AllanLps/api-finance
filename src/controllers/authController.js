@@ -33,7 +33,7 @@ router.post("/", (req, res) => {
     res.send("login ou senha inválidos!");
   }
   const token = jwt.sign({ id: userTest.login, role: "user" }, "subcruz", {
-    expiresIn: 60,
+    expiresIn: 600,
   });
   res.send(token);
 });
