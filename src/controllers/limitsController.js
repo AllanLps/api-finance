@@ -7,7 +7,7 @@ router.use(auth_middleware);
 
 router.get("/", async (req, res) => {
   try {
-    const result = prisma.limits.findMany();
+    const result = await prisma.limits.findMany();
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ error: "Erro ao buscar limites" });
@@ -33,7 +33,7 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { value, status, id_user, id_category } = req.body;
+    const { value, status, notice, id_user, id_category } = req.body;
 
     // valida campos obrigatórios
     if (!value || !status || !id_user || !id_category) {
@@ -66,8 +66,50 @@ router.post("/", async (req, res) => {
     });
     res.status(201).json(result);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Erro ao criar limite" });
   }
 });
 
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { value, status, notice } = req.body;
+
+    const exist = await prisma.limits.findUnique({ where: { id } });
+
+    if (!exist)
+      return res.status(404).json({ error: "Limite não encontrador" });
+    const result = await prisma.limits.update({
+      where: { id },
+      data: {
+        value: value ? Number(value) : undefined,
+        status,
+        notice,
+      },
+      include: {
+        category: true,
+        user: true,
+      },
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Erro ao atualizar limite" });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ error: "ID não informado" });
+
+    const exist = await prisma.limits.findUnique({ where: { id } });
+    if (!exist) return res.status(404).json({ error: "Limite não encontrado" });
+    const result = await prisma.limits.delete({ where: { id } });
+    res.status(200).json({ result });
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao deletar limite" });
+  }
+});
 module.exports = (app) => app.use("/api/v1/limit", router);

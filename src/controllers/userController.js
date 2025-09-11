@@ -8,7 +8,7 @@ router.use(auth_middleware);
 
 router.get("/", async (req, res) => {
   try {
-    const result = await prisma.usesr.findMany();
+    const result = await prisma.user.findMany();
     res.status(200).json(result);
   } catch (error) {
     console.log("Error => ", error);

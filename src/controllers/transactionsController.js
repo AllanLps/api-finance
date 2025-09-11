@@ -48,7 +48,17 @@ router.post("/", async (req, res) => {
       id_user,
     } = req.body;
 
-    if (!value || !type || !status || !date || !id_account || !id_user) {
+    console.log("dados recebidos", req.body);
+
+    if (
+      !value ||
+      !type ||
+      !status ||
+      !date ||
+      !id_account ||
+      !id_user ||
+      !id_category
+    ) {
       return res
         .status(400)
         .json({ error: "Dados obrigatórios não informados" });
@@ -60,7 +70,7 @@ router.post("/", async (req, res) => {
     }
 
     // verifica se o tipo é válido
-    const [user, account, category] = await Promise.all(
+    const [user, account, category] = await Promise.all([
       prisma.user.findUnique({ where: { id: id_user }, select: { id: true } }),
       prisma.accounts.findUnique({
         where: { id: id_account },
@@ -69,8 +79,8 @@ router.post("/", async (req, res) => {
       prisma.category.findUnique({
         where: { id: id_category },
         select: { id: true },
-      })
-    );
+      }),
+    ]);
 
     if (!user) return res.status(400).json("User não encontrado!");
     if (!account) return res.status(400).json("Conta não encontrada!");
@@ -79,8 +89,8 @@ router.post("/", async (req, res) => {
     const result = await prisma.transactions.create({
       data: {
         value,
-        type,
-        status,
+        type: Number(type),
+        status: Number(status),
         description,
         image,
         date: new Date(date),
@@ -91,6 +101,7 @@ router.post("/", async (req, res) => {
     });
     res.status(200).json(result);
   } catch (error) {
+    console.log("Error => ", error);
     res.status(500).json({ error: "Erro ao criar transação" });
   }
 });
@@ -135,4 +146,5 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ error: "Erro ao deletar transação" });
   }
 });
+
 module.exports = (app) => app.use("/api/v1/transaction", router);
